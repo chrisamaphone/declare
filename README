@@ -1,0 +1,3 @@
+Project goal: a learning exercise duplicating as much of Inform's
+functionality as possible (i.e. parse standard commands, output z5, etc)
+in SML.
