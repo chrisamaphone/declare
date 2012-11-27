@@ -1,3 +1,10 @@
+(*
+*
+* TODO: 
+* - context-(room-)sensitive object naming
+* - factor out game-specific logic and write a new example
+*)
+
 structure Game =
 struct
   type object = string
@@ -186,6 +193,7 @@ struct
          | WestOfHouse => westOfHouse
          | Mailbox => mailbox
          | Leaflet => leaflet
+         | Mushroom => mushroom
 
     fun getData (Node {data=d, ...}) = d
     fun getChildren (Node {children=r, ...}) = !r
@@ -205,6 +213,7 @@ struct
       case s of
            CONTAINER r => (case (!r) of OPEN => "open" | CLOSED => "closed")
          | SWITCH r => (case (!r) of OFF => "off" | ON => "on")
+         | BORING => "none"
 
     (* contents : thing -> thing list *)
     val contents = (map getData) o getChildren o mapping
@@ -229,7 +238,7 @@ struct
   fun description thing =
     (case thing of
          WestOfHouse => 
-         "You are in a field west of a while house."
+         "You are in a field west of a white house."
        | Woods => "You are in woods."
        | House => "You are in a house."
        | Mailbox =>
@@ -239,9 +248,11 @@ struct
            in
              "The mailbox is "^stateString^"."
            end
-       | Leaflet => "The leaflet reads, \"Welcome to the game.\"")
+       | Leaflet => "The leaflet reads, \"Welcome to the game.\""
+       | Mushroom => "The mushroom looks tasty.")
 
   fun portable Leaflet = true
+    | portable Mushroom = true
     | portable _ = false
 
   fun edible Mushroom = true
@@ -279,7 +290,7 @@ struct
     case SynTable.find (thingTable, obj) of
          NONE => NONE
        | SOME thing =>
-           if (visible thing) then SOME thing
+          if (visible thing) then SOME thing
            else NONE
 
   fun contentsToString thing =
@@ -342,9 +353,7 @@ struct
 
   fun try_take obj =
   let
-    val () = print "1XXXXXXX" (* XXX *)
     val thingmaybe = resolve obj
-    val () = print "2XXXXXXX" (* XXX *)
   in
     case thingmaybe of
          NONE => "Sorry, I don't see that here."
@@ -353,7 +362,6 @@ struct
             (* Move it in the object tree *)
             let
               val m = State.mapping thing 
-              val () = print "3XXXXXX" (* XXX *)
               val State.Node {parent = ref p, ...} = m
               val success = State.removeChild thing p
             in (* check that it's actually there *)
