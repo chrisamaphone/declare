@@ -1,6 +1,7 @@
 (*
 *
 * TODO: 
+* - debug eating something in your inventory
 * - context-(room-)sensitive object naming
 * - factor out game-specific logic and write a new example
 *)
@@ -373,7 +374,34 @@ struct
           else "That's hardly portable."
   end
 
+  fun report_eat thing =
+    case thing of
+         Mushroom => "You eat the mushroom. Nom."
+       | _ => "You scarf it down."
+
+  fun try_eat obj failmsg =
+  let
+    val thingmaybe = resolve obj
+  in
+    case thingmaybe of
+         NONE => failmsg
+       | SOME thing =>
+           if (edible thing) then
+             let
+               val m = State.mapping thing
+               val State.Node {parent = ref p, ...} = m
+               val success = State.removeChild thing p
+             in
+               if success then
+                 report_eat thing
+               else
+                 failmsg
+             end
+          else
+            "That's plainly inedible."
+  end
    
+  val fail_notthere = "I don't see that there."
 
   fun reply command =
     case command of
@@ -394,6 +422,7 @@ struct
        | TAKE obj => try_take obj
        | PUT_IN (a, b) => "you want to put "^a^" in "^b^"."
        | PUT_ON (a, b) => "you want to put "^a^" on "^b^"."
+       | EAT obj => try_eat obj fail_notthere
        | _ => "can't do that yet"
 
 end
